@@ -1,4 +1,4 @@
-require 'sandal'
+require 'jwt'
 
 module Doorkeeper
   module OpenidConnect
@@ -18,7 +18,8 @@ module Doorkeeper
             sub: subject,
             aud: audience,
             exp: expiration,
-            iat: issued_at
+            iat: issued_at,
+            nonce: @resource_owner.nonce
           }
         end
 
@@ -29,10 +30,7 @@ module Doorkeeper
         # TODO make signature strategy configurable with keys?
         # TODO move this out of the model
         def as_jws_token
-          signer = Sandal::Sig::RS256.new(Doorkeeper::OpenidConnect.configuration.jws_private_key)
-          Sandal.encode_token(claims, signer, {
-            kid: Doorkeeper::OpenidConnect.configuration.jws_public_key
-          })
+          JWT.encode(claims, @access_token.application.secret, 'HS512')
         end
 
         private
